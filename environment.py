@@ -23,6 +23,7 @@ class OperacaoDrone:
         self.grid[self.drone_pos[0]][self.drone_pos[1]] = 1
 
     def renderizar(self):
+        """Limpa o terminal e desenha o estado atual do ambiente."""
         if os.name == 'nt': # Windows
             subprocess.run(['cls'], shell=True)
         else: # Linux/macOS
@@ -62,6 +63,7 @@ class OperacaoDrone:
         print("\n"+"="*22)
 
     def mover_drone(self, acao):
+        """Processa a ação escolhida (movimento ou interação)."""
         linha, col = self.drone_pos
 
         if acao == 'w' and linha > 0:
@@ -90,6 +92,7 @@ class OperacaoDrone:
                 time.sleep(1)
 
     def espalhar_fogo(self):
+        """Lógica simples para o fogo se espalhar aleatoriamente."""
         novos_fogos = []
         for i in range(self.tamanho):
             for j in range(self.tamanho):
