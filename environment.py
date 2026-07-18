@@ -38,14 +38,14 @@ class OperacaoDrone:
         TXT_PRETO = "\033[30m"  # Texto do Drone
 
         print("=== OPERAÇÃO DRONE ===")
-        print(f"Nível de Água: {self.agua_maxima}")
+        print(f"Nível de Água: {self.agua_atual}")
         print("Controles: [W] Cima | [S] Baixo | [A] Esquerda | [D] Direita\n")
         print("Ações: [E] Jogar Água | [R] Reabastecer | [Q] Sair\n")
 
         for i in range(self.tamanho):
             linha = ""
             for j in range(self.tamanho):
-                if [i, j] in self.drone_pos:
+                if [i, j] == self.drone_pos:
                     linha += f"{BG_BRANCO}{TXT_PRETO} D {RESET}"
                 else:
                     estado_celula = self.grid[i][j]
@@ -114,7 +114,7 @@ if __name__ == "__main__":
 
     while True:
         env.renderizar()
-        acao = input("Escolha uma ação: ".lower())
+        acao = input("Escolha uma ação: ").lower()
 
         if acao == 'q':
             print("Encerrando simulação...")
