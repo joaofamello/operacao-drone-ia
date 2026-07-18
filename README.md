@@ -11,9 +11,9 @@ O propósito central do repositório é servir como motor de simulação para a 
 
 ## Agentes 
 Conforme as diretrizes do Estudo Dirigido, o projeto integrará os seguintes modelos:
-*   **Agente Heurístico (A*):** Planejamento dinâmico de rotas utilizando a distância de Manhattan.
-*   **Agente de Aprendizado por Reforço (Q-Learning):** Tomada de decisão baseada na maximização de recompensas associadas à preservação florestal ao longo dos episódios.
-*   **Algoritmo Genético:** Evolução de uma população de soluções voltadas à maximização da aptidão (fitness) do drone no cenário.
+*   Agente Heurístico (A*): Planejamento dinâmico de rotas utilizando a distância de Manhattan.
+*   Agente de Aprendizado por Reforço (Q-Learning): Tomada de decisão baseada na maximização de recompensas associadas à preservação florestal ao longo dos episódios.
+*   Algoritmo Genético: Evolução de uma população de soluções voltadas à maximização da aptidão (fitness) do drone no cenário.
 
 ## Instalação e Execução
 
