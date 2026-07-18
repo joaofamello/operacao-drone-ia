@@ -60,3 +60,31 @@ class OperacaoDrone:
 
                 print(linha)
             print("\n"+"="*22)
+
+        def mover_drone(self, acao):
+            linha, col = self.drone_pos
+
+            if acao == 'w' and linha > 0:
+                self.drone_pos[0] -= 1
+            elif acao == 's' and linha < self.tamanho - 1:
+                self.drone_pos[0] += 1
+            elif acao == 'a' and col > 0:
+                self.drone_pos[1] -= 1
+            elif acao == 'd' and col < self.tamanho - 1:
+                self.drone_pos[1] += 1
+
+            elif acao == 'e': # Jogar água
+                if self.agua_atual > 0 and self.grid[linha][col] == 2:
+                    self.grid[linha][col] = 1 # Fogo apagado, volta a ser floresta
+                    self.agua_atual -= 1
+                    print("\n[!] Fogo apagado!")
+                    time.sleep(1)
+                elif self.agua_atual == 0:
+                    print("\n[X] Sem água! Abasteça no lago.")
+                    time.sleep(1)
+
+            elif acao == 'r': # Reabastecer
+                if self.grid[linha][col] == 3:
+                    self.agua_atual = self.agua_maxima
+                    print("\n[!] Tanque cheio!")
+                    time.sleep(1)
