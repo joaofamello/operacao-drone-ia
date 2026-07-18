@@ -1,0 +1,6 @@
+# Dependências do Ambiente de Terminal (Nativas)
+# Nenhuma instalação externa é estritamente necessária para o environment.py atual.
+
+# Dependências Futuras
+# pygame==2.5.2
+# numpy==1.26.4
