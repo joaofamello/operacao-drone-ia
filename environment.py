@@ -50,13 +50,13 @@ class OperacaoDrone:
                 else:
                     estado_celula = self.grid[i][j]
                     if estado_celula == 0:
-                        linha += f"{BG_CINZA}\t{RESET}"
+                        linha += f"{BG_CINZA}   {RESET}"
                     elif estado_celula == 1:
-                        linha += f"{BG_VERDE}\t{RESET}"
+                        linha += f"{BG_VERDE}   {RESET}"
                     elif estado_celula == 2:
-                        linha += f"{BG_VERMELHO}\t{RESET}"
+                        linha += f"{BG_VERMELHO}   {RESET}"
                     elif estado_celula == 3:
-                        linha += f"{BG_AZUL}\t{RESET}"
+                        linha += f"{BG_AZUL}   {RESET}"
 
             print(linha)
         print("\n"+"="*22)
@@ -109,3 +109,17 @@ class OperacaoDrone:
         for l, c in novos_fogos:
             self.grid[l][c] = 2
 
+if __name__ == "__main__":
+    env = OperacaoDrone()
+
+    while True:
+        env.renderizar()
+        acao = input("Escolha uma ação: ".lower())
+
+        if acao == 'q':
+            print("Encerrando simulação...")
+            time.sleep(3)
+            break
+
+        env.mover_drone(acao)
+        env.espalhar_fogo()
