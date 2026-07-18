@@ -1,4 +1,5 @@
 import os
+import subprocess
 import random
 import time
 
@@ -20,3 +21,42 @@ class OperacaoDrone:
         self.grid[self.lago_pos[0]][self.lago_pos[1]] = 3
         self.grid[self.fogo_pos[0]][self.fogo_pos[1]] = 2
         self.grid[self.drone_pos[0]][self.drone_pos[1]] = 1
+
+        def renderizar(self):
+            if os.name == 'nt': # Windows
+                subprocess.run(['cls'], shell=True)
+            else: # Linux/macOS
+                subprocess.run(['clear'])
+
+            # Códigos ANSI para colorir o fundo (Background)
+            RESET = "\033[0m"
+            BG_CINZA = "\033[100m"  # Terra queimada
+            BG_VERDE = "\033[42m"  # Floresta
+            BG_VERMELHO = "\033[41m"  # Fogo
+            BG_AZUL = "\033[44m"  # Lago
+            BG_BRANCO = "\033[47m"  # Fundo do Drone
+            TXT_PRETO = "\033[30m"  # Texto do Drone
+
+            print("=== OPERAÇÃO DRONE ===")
+            print(f"Nível de Água: {self.agua_maxima}")
+            print("Controles: [W] Cima | [S] Baixo | [A] Esquerda | [D] Direita\n")
+            print("Ações: [E] Jogar Água | [R] Reabastecer | [Q] Sair\n")
+
+            for i in range(self.tamanho):
+                linha = ""
+                for j in range(self.tamanho):
+                    if [i, j] in self.drone_pos:
+                        linha += f"{BG_BRANCO}{TXT_PRETO} D {RESET}"
+                    else:
+                        estado_celula = self.grid[i][j]
+                        if estado_celula == 0:
+                            linha += f"{BG_CINZA}\t{RESET}"
+                        elif estado_celula == 1:
+                            linha += f"{BG_VERDE}\t{RESET}"
+                        elif estado_celula == 2:
+                            linha += f"{BG_VERMELHO}\t{RESET}"
+                        elif estado_celula == 3:
+                            linha += f"{BG_AZUL}\t{RESET}"
+
+                print(linha)
+            print("\n"+"="*22)
