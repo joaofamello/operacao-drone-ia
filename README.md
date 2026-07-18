@@ -28,3 +28,20 @@ A fase inicial de validação lógica do ambiente foi construída de forma otimi
    ```bash
    git clone [https://github.com/seu-usuario/operacao-drone-ia.git](https://github.com/seu-usuario/operacao-drone-ia.git)
    cd operacao-drone-ia
+   
+2. **(Opicional) Crie e ative um ambiente virtual:** 
+   ```bash
+   python -m venv venv
+   source venv/bin/activate
+   
+3. **Execute o simulador interativo:**
+   ```bash
+   python environment.py
+   
+
+**Controles (Modo Manual)**
+Durante a fase de testes da transição de estados, o drone pode ser operado manualmente no terminal:
+- `W`, `A`, `S`, `D` - Movimentação (Cima, Esquerda, Baixo, Direita).
+- `E` - Ejetar água (apaga o fogo na célula atual).
+- `R` - Reabastecer (enche o tanque quando sobre o lago).
+- `Q` - Encerrar a simulação.
