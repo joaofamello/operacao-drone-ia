@@ -31,22 +31,22 @@ class AgenteHeuristico:
             if objetivo is None:
                 return 'aguardar'
 
-            movimentos = {
-                'w': [linha - 1, col],
-                'e': [linha + 1, col],
-                'r': [linha, col - 1],
-                'd': [linha, col + 1]
-            }
+        movimentos = {
+            'w': [linha - 1, col],
+            's': [linha + 1, col],
+            'a': [linha, col - 1],
+            'd': [linha, col + 1]
+        }
 
-            melhor_acao = None
-            menor_dist = float('inf')
+        melhor_acao = None
+        menor_dist = float('inf')
 
-            for acao, (nl, nc) in movimentos.items():
-                # verifica se o movimento está dentro dos limites do mapa
-                if 0 <= nl < env.tamanho and 0 <= nc < env.tamanho:
-                    dist = self.calcular_distancia([nl, nc], objetivo)
-                    if dist < menor_dist:
-                        menor_dist = dist
-                        melhor_acao = acao
+        for acao, (nl, nc) in movimentos.items():
+            # verifica se o movimento está dentro dos limites do mapa
+            if 0 <= nl < env.tamanho and 0 <= nc < env.tamanho:
+                dist = self.calcular_distancia([nl, nc], objetivo)
+                if dist < menor_dist:
+                    menor_dist = dist
+                    melhor_acao = acao
 
-            return melhor_acao
+        return melhor_acao

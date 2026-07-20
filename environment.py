@@ -2,6 +2,7 @@ import os
 import subprocess
 import random
 import time
+from agent import AgenteHeuristico
 
 class OperacaoDrone:
     def __init__(self, tamanho=10, agua_maxima=5):
@@ -114,15 +115,17 @@ class OperacaoDrone:
 
 if __name__ == "__main__":
     env = OperacaoDrone()
-
+    agente = AgenteHeuristico()
     while True:
         env.renderizar()
-        acao = input("Escolha uma ação: ").lower()
 
-        if acao == 'q':
-            print("Encerrando simulação...")
-            time.sleep(3)
-            break
+        acao = agente.agir(env)
 
-        env.mover_drone(acao)
+        if acao == 'aguardar':
+            print("\nFloresta salva! Aguardando novo focos...")
+            time.sleep(1)
+        elif acao:
+            env.mover_drone(acao)
+
         env.espalhar_fogo()
+        time.sleep(0.5)
