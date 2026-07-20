@@ -4,20 +4,19 @@ import random
 import time
 from agent import AgenteHeuristico
 
+
 class OperacaoDrone:
     def __init__(self, tamanho=10, agua_maxima=5):
         self.tamanho = tamanho
         self.agua_maxima = agua_maxima
         self.agua_atual = agua_maxima
 
-        # 0 = Queimado/Vazio, 1 = Floresta, 2 = Fogo, 3 = Água (Rio/Lago)
+        # 0 = Queimado, 1 = Floresta, 2 = Fogo, 3 = Água (Rio), 4 = Fumaça (Aquecendo)
         self.grid = [[1 for _ in range(tamanho)] for _ in range(tamanho)]
 
-        # Posições iniciais (remover o lago_pos)
         self.drone_pos = [0, 0]
         self.fogo_pos = [tamanho // 2, tamanho // 2]
 
-        # Configuração inicial do grid
         self._gerar_rios()
         self.grid[self.fogo_pos[0]][self.fogo_pos[1]] = 2
         self.grid[self.drone_pos[0]][self.drone_pos[1]] = 1
@@ -28,35 +27,38 @@ class OperacaoDrone:
         for _ in range(quantidade_rios):
             linha = random.randint(0, self.tamanho - 1)
             col = random.randint(0, self.tamanho - 1)
-            comprimento = random.randint(3, 7)  # Rios de tamanho 3 a 7 blocos
+            comprimento = random.randint(3, 7)
 
             for _ in range(comprimento):
                 if 0 <= linha < self.tamanho and 0 <= col < self.tamanho:
                     self.grid[linha][col] = 3
 
-                # Escolhe uma direção aleatória para continuar "desenhando" o rio
                 dl, dc = random.choice([(-1, 0), (1, 0), (0, -1), (0, 1)])
                 linha += dl
                 col += dc
 
-    def renderizar(self):
-        """Limpa o terminal e desenha o estado atual do ambiente."""
-        if os.name == 'nt': # Windows
+
+    def limpar_terminal(self):
+        if os.name == 'nt':
             subprocess.run(['cls'], shell=True)
-        else: # Linux/macOS
+        else:
             subprocess.run(['clear'])
 
-        # Códigos ANSI para colorir o fundo (Background)
+    def renderizar(self):
+        self.limpar_terminal()
+
         RESET = "\033[0m"
-        BG_CINZA = "\033[100m"  # Terra queimada
-        BG_VERDE = "\033[42m"  # Floresta
-        BG_VERMELHO = "\033[41m"  # Fogo
-        BG_AZUL = "\033[44m"  # Lago
-        BG_BRANCO = "\033[47m"  # Fundo do Drone
-        TXT_PRETO = "\033[30m"  # Texto do Drone
+        BG_CINZA = "\033[100m"
+        BG_VERDE = "\033[42m"
+        BG_VERMELHO = "\033[41m"
+        BG_AZUL = "\033[44m"
+        BG_AMARELO = "\033[43m"
+        BG_BRANCO = "\033[47m"
+        TXT_PRETO = "\033[30m"
 
         print("=== OPERAÇÃO DRONE ===")
-        print(f"Nível de Água: {self.agua_atual}")
+        print(f"Nível de Água: {self.agua_atual}/{self.agua_maxima}")
+        print("Controles: Autônomo (Agente Heurístico)\n")
 
         for i in range(self.tamanho):
             linha = ""
@@ -73,12 +75,13 @@ class OperacaoDrone:
                         linha += f"{BG_VERMELHO}   {RESET}"
                     elif estado_celula == 3:
                         linha += f"{BG_AZUL}   {RESET}"
+                    elif estado_celula == 4:
+                        linha += f"{BG_AMARELO}   {RESET}"
 
             print(linha)
-        print("\n"+"="*22)
+        print("\n" + "=" * 22)
 
     def mover_drone(self, acao):
-        """Processa a ação escolhida (movimento ou interação)."""
         linha, col = self.drone_pos
 
         if acao == 'w' and linha > 0:
@@ -90,54 +93,59 @@ class OperacaoDrone:
         elif acao == 'd' and col < self.tamanho - 1:
             self.drone_pos[1] += 1
 
-        elif acao == 'e': # Jogar água
-            if self.agua_atual > 0 and self.grid[linha][col] == 2:
-                self.grid[linha][col] = 1 # Fogo apagado, volta a ser floresta
+        elif acao == 'e':
+            # Drone agora apaga tanto Fogo (2) quanto Fumaça (4)
+            if self.agua_atual > 0 and self.grid[linha][col] in [2, 4]:
+                self.grid[linha][col] = 1
                 self.agua_atual -= 1
-                print("\n[!] Fogo apagado!")
-                time.sleep(1)
-            elif self.agua_atual == 0:
-                print("\n[X] Sem água! Abasteça no lago.")
-                time.sleep(1)
 
-        elif acao == 'r': # Reabastecer
+        elif acao == 'r':
             if self.grid[linha][col] == 3:
                 self.agua_atual = self.agua_maxima
-                print("\n[!] Tanque cheio!")
-                time.sleep(1)
 
     def espalhar_fogo(self):
-        """Lógica simples para o fogo se espalhar aleatoriamente."""
+        """Sistema de estágios: Fumaça (4) vira Fogo (2); Fogo (2) cria Fumaça (4)."""
+        novos_aquecimentos = []
         novos_fogos = []
+
         for i in range(self.tamanho):
             for j in range(self.tamanho):
-                if self.grid[i][j] == 2: # Se tem fogo
+                if self.grid[i][j] == 4:
+                    novos_fogos.append((i, j))  # Fumaça evolui para fogo ativo
+
+                elif self.grid[i][j] == 2:
                     direcoes = [(-1, 0), (1, 0), (0, -1), (0, 1)]
                     random.shuffle(direcoes)
                     for dl, dc in direcoes:
                         nl, nc = i + dl, j + dc
                         if 0 <= nl < self.tamanho and 0 <= nc < self.tamanho:
                             if self.grid[nl][nc] == 1:
-                                if random.random() < 0.2:
-                                    novos_fogos.append((nl, nc))
-                                break
+                                # 20% de chance de espalhar, mas começa como Fumaça
+                                if random.random() < 0.3:
+                                    novos_aquecimentos.append((nl, nc))
 
         for l, c in novos_fogos:
             self.grid[l][c] = 2
+        for l, c in novos_aquecimentos:
+            self.grid[l][c] = 4
+
 
 if __name__ == "__main__":
     env = OperacaoDrone()
     agente = AgenteHeuristico()
+
     while True:
-        env.renderizar()
+        # Vantagem Tática: O drone joga 3 turnos para cada turno do ambiente
+        for _ in range(3):
+            env.renderizar()
+            acao = agente.agir(env)
 
-        acao = agente.agir(env)
+            if acao == 'aguardar':
+                print("\nFloresta salva! Aguardando novos focos...")
+                time.sleep(0.5)
+                break  # Sai do loop de vantagem se não há mais perigo
+            elif acao:
+                env.mover_drone(acao)
 
-        if acao == 'aguardar':
-            print("\nFloresta salva! Aguardando novo focos...")
-            time.sleep(1)
-        elif acao:
-            env.mover_drone(acao)
-
+            time.sleep(0.25)  # Velocidade de visualização do drone
         env.espalhar_fogo()
-        time.sleep(0.5)

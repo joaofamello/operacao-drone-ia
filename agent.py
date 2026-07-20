@@ -5,13 +5,14 @@ class AgenteHeuristico:
     def calcular_distancia(self, pos1, pos2):
         return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
-    def encontrar_alvo_mais_proximo(self, grid, drone_pos, tamanho, tipo_alvo):
+    def encontrar_alvo_mais_proximo(self, grid, drone_pos, tamanho, tipos_alvo):
+        """Aceita uma lista de tipos de alvo. Ex: [2, 4] para Fogo e Fumaça."""
         alvo_mais_proximo = None
         menor_distancia = float('inf')
 
         for i in range(tamanho):
             for j in range(tamanho):
-                if grid[i][j] == tipo_alvo:
+                if grid[i][j] in tipos_alvo:
                     dist = self.calcular_distancia(drone_pos, [i, j])
                     if dist < menor_distancia:
                         menor_distancia = dist
@@ -22,23 +23,22 @@ class AgenteHeuristico:
     def agir(self, env):
         linha, col = env.drone_pos
 
-        # 1. Interação imediata
-        if env.agua_atual > 0 and env.grid[linha][col] == 2:
-            return 'e'  # apagar fogo
+        # 1. Interação imediata (apaga Fogo ou Fumaça)
+        if env.agua_atual > 0 and env.grid[linha][col] in [2, 4]:
+            return 'e'
         if env.agua_atual == 0 and env.grid[linha][col] == 3:
-            return 'r'  # reabastecer no rio
+            return 'r'
 
-        # 2. Definição do objetivo
+            # 2. Definição do objetivo
         objetivo = None
         if env.agua_atual == 0:
             # Procura a água (3) mais próxima
-            objetivo = self.encontrar_alvo_mais_proximo(env.grid, env.drone_pos, env.tamanho, 3)
-            # Contingência caso o mapa seja gerado sem nenhuma água
+            objetivo = self.encontrar_alvo_mais_proximo(env.grid, env.drone_pos, env.tamanho, [3])
             if objetivo is None:
                 return 'aguardar'
         else:
-            # Procura o fogo (2) mais próximo
-            objetivo = self.encontrar_alvo_mais_proximo(env.grid, env.drone_pos, env.tamanho, 2)
+            # Procura o perigo (Fogo [2] ou Fumaça [4]) mais próximo
+            objetivo = self.encontrar_alvo_mais_proximo(env.grid, env.drone_pos, env.tamanho, [2, 4])
             if objetivo is None:
                 return 'aguardar'
 
