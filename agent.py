@@ -6,7 +6,6 @@ class AgenteHeuristico:
         return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
     def encontrar_alvo_mais_proximo(self, grid, drone_pos, tamanho, tipos_alvo):
-        """Aceita uma lista de tipos de alvo. Ex: [2, 4] para Fogo e Fumaça."""
         alvo_mais_proximo = None
         menor_distancia = float('inf')
 
@@ -23,26 +22,24 @@ class AgenteHeuristico:
     def agir(self, env):
         linha, col = env.drone_pos
 
-        # 1. Interação imediata (apaga Fogo ou Fumaça)
+        # 1. Interação imediata
         if env.agua_atual > 0 and env.grid[linha][col] in [2, 4]:
-            return 'e'
+            return 'e'  # apaga fogo (2) ou fumaça (4)
         if env.agua_atual == 0 and env.grid[linha][col] == 3:
-            return 'r'
+            return 'r'  # reabastece no rio (3)
 
-            # 2. Definição do objetivo
+        # 2. Definição do objetivo
         objetivo = None
         if env.agua_atual == 0:
-            # Procura a água (3) mais próxima
             objetivo = self.encontrar_alvo_mais_proximo(env.grid, env.drone_pos, env.tamanho, [3])
             if objetivo is None:
                 return 'aguardar'
         else:
-            # Procura o perigo (Fogo [2] ou Fumaça [4]) mais próximo
             objetivo = self.encontrar_alvo_mais_proximo(env.grid, env.drone_pos, env.tamanho, [2, 4])
             if objetivo is None:
                 return 'aguardar'
 
-        # 3. Cálculo de Rota
+        # 3. Cálculo de Rota (Greedy Search)
         movimentos = {
             'w': [linha - 1, col],
             's': [linha + 1, col],
