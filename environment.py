@@ -10,18 +10,34 @@ class OperacaoDrone:
         self.agua_maxima = agua_maxima
         self.agua_atual = agua_maxima
 
-        # 0 = Queimado/Vazio, 1 = Floresta, 2 = Fogo, 3 = Lago
+        # 0 = Queimado/Vazio, 1 = Floresta, 2 = Fogo, 3 = Água (Rio/Lago)
         self.grid = [[1 for _ in range(tamanho)] for _ in range(tamanho)]
 
-        # Posições iniciais
+        # Posições iniciais (remover o lago_pos)
         self.drone_pos = [0, 0]
-        self.lago_pos = [tamanho - 1, tamanho - 1]
         self.fogo_pos = [tamanho // 2, tamanho // 2]
 
         # Configuração inicial do grid
-        self.grid[self.lago_pos[0]][self.lago_pos[1]] = 3
+        self._gerar_rios()
         self.grid[self.fogo_pos[0]][self.fogo_pos[1]] = 2
         self.grid[self.drone_pos[0]][self.drone_pos[1]] = 1
+
+    def _gerar_rios(self):
+        """Gera pequenos rios contínuos aleatórios pelo mapa."""
+        quantidade_rios = 3
+        for _ in range(quantidade_rios):
+            linha = random.randint(0, self.tamanho - 1)
+            col = random.randint(0, self.tamanho - 1)
+            comprimento = random.randint(3, 7)  # Rios de tamanho 3 a 7 blocos
+
+            for _ in range(comprimento):
+                if 0 <= linha < self.tamanho and 0 <= col < self.tamanho:
+                    self.grid[linha][col] = 3
+
+                # Escolhe uma direção aleatória para continuar "desenhando" o rio
+                dl, dc = random.choice([(-1, 0), (1, 0), (0, -1), (0, 1)])
+                linha += dl
+                col += dc
 
     def renderizar(self):
         """Limpa o terminal e desenha o estado atual do ambiente."""
@@ -41,8 +57,6 @@ class OperacaoDrone:
 
         print("=== OPERAÇÃO DRONE ===")
         print(f"Nível de Água: {self.agua_atual}")
-        print("Controles: [W] Cima | [S] Baixo | [A] Esquerda | [D] Direita\n")
-        print("Ações: [E] Jogar Água | [R] Reabastecer | [Q] Sair\n")
 
         for i in range(self.tamanho):
             linha = ""
@@ -98,15 +112,13 @@ class OperacaoDrone:
         for i in range(self.tamanho):
             for j in range(self.tamanho):
                 if self.grid[i][j] == 2: # Se tem fogo
-                    # Tenta alastrar o fogo para uma célula adjacente
                     direcoes = [(-1, 0), (1, 0), (0, -1), (0, 1)]
                     random.shuffle(direcoes)
                     for dl, dc in direcoes:
                         nl, nc = i + dl, j + dc
-                        # Se estiver dentro do mapa e for florsta (1)
                         if 0 <= nl < self.tamanho and 0 <= nc < self.tamanho:
                             if self.grid[nl][nc] == 1:
-                                if random.random() < 0.2: # 20% de chance de espalhar.
+                                if random.random() < 0.2:
                                     novos_fogos.append((nl, nc))
                                 break
 
