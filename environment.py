@@ -1,8 +1,6 @@
 import os
 import subprocess
 import random
-import time
-from agent_heuristico import AgenteHeuristico
 
 
 class OperacaoDrone:
@@ -21,10 +19,13 @@ class OperacaoDrone:
 
         self._gerar_rios()
 
-        for _ in range(3):
+        focos_criados = 0
+        while focos_criados < 3:
             fl = random.randint(0, tamanho - 1)
             fc = random.randint(0, tamanho - 1)
-            self.grid[fl][fc] = 2
+            if self.grid[fl][fc] == 1:
+                self.grid[fl][fc] = 2
+                focos_criados += 1
 
         self.grid[self.drone_pos[0]][self.drone_pos[1]] = 1
 
@@ -154,23 +155,3 @@ class OperacaoDrone:
             rc = random.randint(0, self.tamanho - 1)
             if self.grid[rl][rc] == 1:
                 self.grid[rl][rc] = 4
-
-
-if __name__ == "__main__":
-    env = OperacaoDrone()
-    agente = AgenteHeuristico()
-
-    while True:
-        for _ in range(3):
-            env.renderizar()
-            acao = agente.agir(env)
-
-            if acao == 'aguardar':
-                print("\nFloresta salva! Drone em patrulha aguardando novos focos...")
-                time.sleep(0.5)
-            elif acao:
-                env.mover_drone(acao)
-
-            time.sleep(0.15)
-
-        env.espalhar_fogo()
