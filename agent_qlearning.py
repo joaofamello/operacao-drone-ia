@@ -1,22 +1,19 @@
 import random
 
+
 class AgenteQLearning:
     def __init__(self, alpha=0.1, gamma=0.9, epsilon=1.0, epsilon_min=0.01, epsilon_decay=0.995):
-        # a tabela Q, onde o conhecimento fica armazenado
         self.q_table = {}
-
-        # hiperparâmetros do aprendizado
-        self.alpha = alpha  # Taxa de aprendizado
-        self.gamma = gamma  # Fator de desconto (foco no futuro)
-        self.epsilon = epsilon  # Taxa de exploração inicial (1.0 = 100% aleatório)
-        self.epsilon_min = epsilon_min  # Mínimo de aleatoriedade
-        self.epsilon_decay = epsilon_decay  # Velocidade que ele deixa de ser aleatório
-
+        self.alpha = alpha
+        self.gamma = gamma
+        self.epsilon = epsilon
+        self.epsilon_min = epsilon_min
+        self.epsilon_decay = epsilon_decay
         self.acoes = ['w', 's', 'a', 'd', 'e', 'r']
 
-        # memória de curto prazo para a Equação de Bellman
         self.estado_anterior = None
         self.acao_anterior = None
+        self.distancia_anterior = float('inf')
 
     def calcular_distancia(self, pos1, pos2):
         return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
@@ -31,91 +28,85 @@ class AgenteQLearning:
                     if dist < menor_dist:
                         menor_dist = dist
                         alvo = [i, j]
-        return alvo
+        return alvo, menor_dist
 
-    def obter_direcao(self, drone_pos, alvo_pos):
-        if alvo_pos is None: return "Nenhum"
-        if drone_pos == alvo_pos: return "No_Alvo"
-
-        dl = alvo_pos[0] - drone_pos[0]
-        dc = alvo_pos[1] - drone_pos[1]
-
-        if abs(dl) > abs(dc):
-            return "Sul" if dl > 0 else "Norte"
-        else:
-            return "Leste" if dc > 0 else "Oeste"
+    def obter_vetor(self, drone_pos, alvo_pos):
+        """Retorna a direção como um vetor simples (-1, 0 ou 1) nos eixos Y e X."""
+        if alvo_pos is None: return (0, 0)
+        dy = 0 if alvo_pos[0] == drone_pos[0] else (1 if alvo_pos[0] > drone_pos[0] else -1)
+        dx = 0 if alvo_pos[1] == drone_pos[1] else (1 if alvo_pos[1] > drone_pos[1] else -1)
+        return (dy, dx)
 
     def observar_estado(self, env):
+        # O estado agora é focado: Ele só olha para o alvo que importa (Fogo ou Água)
         tanque = "Com_Agua" if env.agua_atual > 0 else "Vazio"
 
-        fogo_pos = self.encontrar_alvo(env.grid, env.drone_pos, env.tamanho, [2, 4])
-        dir_fogo = self.obter_direcao(env.drone_pos, fogo_pos)
+        if tanque == "Com_Agua":
+            alvo_pos, dist = self.encontrar_alvo(env.grid, env.drone_pos, env.tamanho, [2, 4])
+        else:
+            alvo_pos, dist = self.encontrar_alvo(env.grid, env.drone_pos, env.tamanho, [3])
 
-        agua_pos = self.encontrar_alvo(env.grid, env.drone_pos, env.tamanho, [3])
-        dir_agua = self.obter_direcao(env.drone_pos, agua_pos)
+        dy, dx = self.obter_vetor(env.drone_pos, alvo_pos)
 
-        return (tanque, dir_fogo, dir_agua)
+        # O estado agora tem apenas 18 combinações (Ex: "Com_Agua", 1, -1)
+        return (tanque, dy, dx), dist
 
     def inicializar_estado(self, estado):
         if estado not in self.q_table:
             self.q_table[estado] = {a: 0.0 for a in self.acoes}
 
-    def calcular_recompensa(self, estado, acao):
-        tanque, dir_fogo, dir_agua = estado
-
-        # recompensas e punições finais
-        if acao == 'e':
-            return 100 if tanque == "Com_Agua" and dir_fogo == "No_Alvo" else -10
-        if acao == 'r':
-            return 100 if tanque == "Vazio" and dir_agua == "No_Alvo" else -10
-
-        # recompensas de movimentação
-        if tanque == "Com_Agua":
-            if acao == 'w' and dir_fogo == "Norte": return 5
-            if acao == 's' and dir_fogo == "Sul": return 5
-            if acao == 'a' and dir_fogo == "Oeste": return 5
-            if acao == 'd' and dir_fogo == "Leste": return 5
-        else:
-            if acao == 'w' and dir_agua == "Norte": return 5
-            if acao == 's' and dir_agua == "Sul": return 5
-            if acao == 'a' and dir_agua == "Oeste": return 5
-            if acao == 'd' and dir_agua == "Leste": return 5
-
-        # punição padrão por dar um passo errado ou inútil
-        return -1
-
     def agir(self, env):
-        estado_atual = self.observar_estado(env)
+        estado_atual, dist_atual = self.observar_estado(env)
         self.inicializar_estado(estado_atual)
 
-        # condição de descanso (Se o mapa estiver limpo)
-        if estado_atual[1] == "Nenhum" and estado_atual[0] == "Com_Agua":
-            self.estado_anterior = None
-            return 'aguardar'
-
-        # atualiza a Tabela Q com base no que aconteceu no turno passado (Equação de Bellman)
         if self.estado_anterior is not None:
-            recompensa = self.calcular_recompensa(self.estado_anterior, self.acao_anterior)
+            tanque_antigo, dy_antigo, dx_antigo = self.estado_anterior
+            recompensa = 0
 
+            # 1. Avalia se a interação foi um sucesso total (Vitória)
+            if self.acao_anterior == 'e':
+                if tanque_antigo == "Com_Agua" and dy_antigo == 0 and dx_antigo == 0:
+                    recompensa = 100
+                else:
+                    recompensa = -10  # Punição por desperdiçar o turno apertando E à toa
+
+            elif self.acao_anterior == 'r':
+                if tanque_antigo == "Vazio" and dy_antigo == 0 and dx_antigo == 0:
+                    recompensa = 100
+                else:
+                    recompensa = -10
+
+                    # 2. Avalia a movimentação pelo delta de distância (Progresso Anti-Hack)
+            else:
+                if dist_atual < self.distancia_anterior:
+                    recompensa = 10  # Passo perfeito na direção certa
+                else:
+                    recompensa = -10  # Afastou ou bateu na parede
+
+            # Equação de Bellman
             q_antigo = self.q_table[self.estado_anterior][self.acao_anterior]
             max_q_novo = max(self.q_table[estado_atual].values())
-
-            # a fórmula mágica do Q-Learning:
             novo_q = q_antigo + self.alpha * (recompensa + self.gamma * max_q_novo - q_antigo)
             self.q_table[self.estado_anterior][self.acao_anterior] = novo_q
 
-        # decaimento do Epsilon (Fica menos aleatório com o tempo)
+        # Decaimento do Epsilon (Fica cada vez mais inteligente e menos aleatório)
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
-        # política Epsilon-Greedy (Explorar x Explorar)
+        # Se o mapa está limpo, descansa
+        if estado_atual[1] == 0 and estado_atual[2] == 0 and estado_atual[0] == "Com_Agua" and dist_atual == float(
+                'inf'):
+            self.estado_anterior = None
+            return 'aguardar'
+
+        # Escolhe a Ação
         if random.random() < self.epsilon:
             acao_escolhida = random.choice(self.acoes)
         else:
             acao_escolhida = max(self.q_table[estado_atual], key=self.q_table[estado_atual].get)
 
-        # salva o estado atual na memória para avaliar no próximo turno
         self.estado_anterior = estado_atual
         self.acao_anterior = acao_escolhida
+        self.distancia_anterior = dist_atual
 
         return acao_escolhida
