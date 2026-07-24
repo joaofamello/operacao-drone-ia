@@ -56,25 +56,52 @@ class AgenteGenetico:
 
 
 def avaliar_fitness(dna):
-    """Mede a competência de um DNA rodando um mapa simulado."""
-    env = OperacaoDrone(tamanho=15)
-    agente = AgenteGenetico(dna)
-    focos_apagados = 0
+    """Mede a competência de um DNA rodando mapas simulados com pontuação guiada."""
+    fitness_total = 0
 
-    for _ in range(50):  # Vida do drone dura 50 turnos
-        for _ in range(3):
-            acao = agente.agir(env)
+    # Testa o mesmo DNA em 3 mapas diferentes para eliminar o fator "sorte"
+    for _ in range(3):
+        env = OperacaoDrone(tamanho=15)
+        agente = AgenteGenetico(dna)
+        fitness_rodada = 0
 
-            # Conta pontos físicos reais (apagou fogo ou pegou água na hora certa)
-            if acao == 'e' and env.agua_atual > 0 and env.grid[env.drone_pos[0]][env.drone_pos[1]] in [2, 4]:
-                focos_apagados += 5
-            elif acao == 'r' and env.agua_atual == 0 and env.grid[env.drone_pos[0]][env.drone_pos[1]] == 3:
-                focos_apagados += 5
+        for _ in range(50):  # Vida do drone dura 50 turnos
+            for _ in range(3):  # Vantagem tática do drone
+                # Identifica a distância antes de mover
+                tanque = "Com_Agua" if env.agua_atual > 0 else "Vazio"
+                alvo_pos = agente.encontrar_alvo(env.grid, env.drone_pos, env.tamanho,
+                                                 [2, 4]) if tanque == "Com_Agua" else agente.encontrar_alvo(env.grid,
+                                                                                                            env.drone_pos,
+                                                                                                            env.tamanho,
+                                                                                                            [3])
 
-            env.mover_drone(acao)
-        env.espalhar_fogo()
+                dist_antes = float('inf')
+                if alvo_pos:
+                    dist_antes = agente.calcular_distancia(env.drone_pos, alvo_pos)
 
-    return focos_apagados
+                acao = agente.agir(env)
+
+                # Pontuação Massiva para o Objetivo Final (Vitória)
+                if acao == 'e' and env.agua_atual > 0 and env.grid[env.drone_pos[0]][env.drone_pos[1]] in [2, 4]:
+                    fitness_rodada += 500
+                elif acao == 'r' and env.agua_atual == 0 and env.grid[env.drone_pos[0]][env.drone_pos[1]] == 3:
+                    fitness_rodada += 500
+
+                env.mover_drone(acao)
+
+                # 3. Pontuação de Progresso (O segredo da evolução rápida)
+                if alvo_pos:
+                    dist_depois = agente.calcular_distancia(env.drone_pos, alvo_pos)
+                    if dist_depois < dist_antes:
+                        fitness_rodada += 5  # Ganha pontos por ir na direção certa
+                    else:
+                        fitness_rodada -= 2  # Perde pontos se afastar ou bater na parede
+
+            env.espalhar_fogo()
+
+        fitness_total += fitness_rodada
+
+    return fitness_total / 3  # Retorna a média
 
 
 def evoluir_populacao(geracoes=150, tam_pop=100):
