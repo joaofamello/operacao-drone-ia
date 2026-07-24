@@ -3,14 +3,15 @@ import sys
 import pygame
 from environment import OperacaoDrone
 # from agent_heuristico import AgenteHeuristico
-from agent_qlearning import AgenteQLearning
+# from agent_qlearning import AgenteQLearning
+from agent_genetico import AgenteGenetico, evoluir_populacao
 
 # iniciando o pygame
 pygame.init()
 
 # configurações da janela
 TAMANHO_BLOCO = 40
-TAMANHO_GRID = 10
+TAMANHO_GRID = 15
 LARGURA = TAMANHO_BLOCO * TAMANHO_GRID
 ALTURA_HUD = 80
 ALTURA_TOTAL = LARGURA + ALTURA_HUD
@@ -31,7 +32,7 @@ fonte = pygame.font.SysFont("arial", 24, bold=True)
 relogio = pygame.time.Clock()
 
 env = OperacaoDrone(tamanho=TAMANHO_GRID)
-agente = AgenteQLearning()
+agente = evoluir_populacao(geracoes=150, tam_pop=100)
 
 def desenhar_ambiente(env):
     tela.fill(COR_FUNDO_HUD)
