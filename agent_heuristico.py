@@ -1,3 +1,5 @@
+import heapq
+
 class AgenteHeuristico:
     def __init__(self):
         pass
@@ -22,39 +24,45 @@ class AgenteHeuristico:
     def agir(self, env):
         linha, col = env.drone_pos
 
-        # 1. Interação imediata
-        if env.agua_atual > 0 and env.grid[linha][col] in [2, 4]:
-            return 'e'  # apaga fogo (2) ou fumaça (4)
-        if env.agua_atual == 0 and env.grid[linha][col] == 3:
-            return 'r'  # reabastece no rio (3)
+        # interação imediata
+        if env.agua_atual > 0 and env.grid[linha][col] in [2, 4]: return 'e'
+        if env.agua_atual == 0 and env.grid[linha][col] == 3: return 'r'
 
-        # 2. Definição do objetivo
-        objetivo = None
-        if env.agua_atual == 0:
-            objetivo = self.encontrar_alvo_mais_proximo(env.grid, env.drone_pos, env.tamanho, [3])
-            if objetivo is None:
-                return 'aguardar'
-        else:
-            objetivo = self.encontrar_alvo_mais_proximo(env.grid, env.drone_pos, env.tamanho, [2, 4])
-            if objetivo is None:
-                return 'aguardar'
+        # definição do objetivo
+        objetivo = self.encontrar_alvo_mais_proximo(env.grid, env.drone_pos, env.tamanho,
+                                                    [3] if env.agua_atual == 0 else [2, 4])
+        if objetivo is None: return 'aguardar'
 
-        # 3. Cálculo de Rota (Greedy Search)
-        movimentos = {
-            'w': [linha - 1, col],
-            's': [linha + 1, col],
-            'a': [linha, col - 1],
-            'd': [linha, col + 1]
-        }
+        # cálculo de Rota (Algoritmo A* Real)
+        inicio = tuple(env.drone_pos)
+        objetivo_tuple = tuple(objetivo)
 
-        melhor_acao = None
-        menor_dist = float('inf')
+        open_set = []
+        # tupla: (f_score, coordenada_atual, caminho_de_acoes)
+        heapq.heappush(open_set, (0, inicio, []))
 
-        for acao, (nl, nc) in movimentos.items():
-            if 0 <= nl < env.tamanho and 0 <= nc < env.tamanho:
-                dist = self.calcular_distancia([nl, nc], objetivo)
-                if dist < menor_dist:
-                    menor_dist = dist
-                    melhor_acao = acao
+        g_score = {inicio: 0}
+        closed_set = set()
+        movimentos = {'w': (-1, 0), 's': (1, 0), 'a': (0, -1), 'd': (0, 1)}
 
-        return melhor_acao
+        while open_set:
+            _, atual, caminho = heapq.heappop(open_set)
+
+            if atual == objetivo_tuple:
+                return caminho[0] if caminho else 'aguardar'
+
+            if atual in closed_set: continue
+            closed_set.add(atual)
+
+            for acao, (dl, dc) in movimentos.items():
+                vizinho = (atual[0] + dl, atual[1] + dc)
+
+                if 0 <= vizinho[0] < env.tamanho and 0 <= vizinho[1] < env.tamanho:
+                    tentativa_g = g_score[atual] + 1  # custo de dar 1 passo
+
+                    if vizinho not in g_score or tentativa_g < g_score[vizinho]:
+                        g_score[vizinho] = tentativa_g
+                        f_score = tentativa_g + self.calcular_distancia(vizinho, objetivo_tuple)
+                        heapq.heappush(open_set, (f_score, vizinho, caminho + [acao]))
+
+        return 'aguardar'
