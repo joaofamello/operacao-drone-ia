@@ -141,7 +141,6 @@ class OperacaoDrone:
                                     elif dl == -vento_dl and dc == -vento_dc:
                                         chance_propagacao = 0.01
 
-                                        # Sem o comando 'break', o fogo pode se espalhar para múltiplos lados
                                 if random.random() < chance_propagacao:
                                     novos_aquecimentos.append((nl, nc))
 
