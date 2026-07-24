@@ -32,7 +32,7 @@ fonte = pygame.font.SysFont("arial", 24, bold=True)
 relogio = pygame.time.Clock()
 
 env = OperacaoDrone(tamanho=TAMANHO_GRID)
-agente = evoluir_populacao(geracoes=150, tam_pop=100)
+agente = evoluir_populacao(geracoes=50, tam_pop=50)
 
 def desenhar_ambiente(env):
     tela.fill(COR_FUNDO_HUD)

@@ -36,45 +36,40 @@ class AgenteGenetico:
 
 def avaliar_fitness(dna):
     fitness_total = 0
+    env = OperacaoDrone(tamanho=15)
+    agente = AgenteGenetico(dna)
 
-    for _ in range(3):
-        env = OperacaoDrone(tamanho=15)
-        agente = AgenteGenetico(dna)
-        fitness_rodada = 0
+    for _ in range(50):
+        for _ in range(3):
+            # Obtém a visão do radar (já nos dá a direção sem precisar varrer o mapa de novo)
+            estado_atual = agente.observar_estado(env)
+            tanque, dy, dx = estado_atual
 
-        for _ in range(50):
-            for _ in range(3):
-                tanque = "Com_Agua" if env.agua_atual > 0 else "Vazio"
-                alvo_pos = encontrar_alvo(env.grid, env.drone_pos, env.tamanho,
-                                          [2, 4]) if tanque == "Com_Agua" else encontrar_alvo(env.grid, env.drone_pos,
-                                                                                              env.tamanho, [3])
+            acao = agente.dna[estado_atual]
 
-                dist_antes = float('inf')
-                if alvo_pos:
-                    dist_antes = calcular_distancia(env.drone_pos, alvo_pos)
+            # Recompensas de Interação (Vitória)
+            if acao == 'e' and env.agua_atual > 0 and env.grid[env.drone_pos[0]][env.drone_pos[1]] in [2, 4]:
+                fitness_total += 500
+            elif acao == 'r' and env.agua_atual == 0 and env.grid[env.drone_pos[0]][env.drone_pos[1]] == 3:
+                fitness_total += 500
 
-                acao = agente.agir(env)
+            env.mover_drone(acao)
 
-                if acao == 'e' and env.agua_atual > 0 and env.grid[env.drone_pos[0]][env.drone_pos[1]] in [2, 4]:
-                    fitness_rodada += 500
-                elif acao == 'r' and env.agua_atual == 0 and env.grid[env.drone_pos[0]][env.drone_pos[1]] == 3:
-                    fitness_rodada += 500
+            # Recompensas de Progresso (Calculadas pelo vetor, 100x mais rápido)
+            if acao == 'w' and dy == -1:
+                fitness_total += 5
+            elif acao == 's' and dy == 1:
+                fitness_total += 5
+            elif acao == 'a' and dx == -1:
+                fitness_total += 5
+            elif acao == 'd' and dx == 1:
+                fitness_total += 5
+            elif acao in ['w', 's', 'a', 'd']:
+                fitness_total -= 2  # Punição por errar a direção
 
-                env.mover_drone(acao)
+        env.espalhar_fogo()
 
-                if alvo_pos:
-                    dist_depois = calcular_distancia(env.drone_pos, alvo_pos)
-                    if dist_depois < dist_antes:
-                        fitness_rodada += 5
-                    else:
-                        fitness_rodada -= 2
-
-            env.espalhar_fogo()
-
-        fitness_total += fitness_rodada
-
-    return fitness_total / 3
-
+    return fitness_total
 
 def evoluir_populacao(geracoes=150, tam_pop=100):
     print("Iniciando Evolução Genética... (Isso levará poucos segundos)")
