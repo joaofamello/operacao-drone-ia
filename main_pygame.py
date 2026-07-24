@@ -2,7 +2,7 @@ import sys
 
 import pygame
 from environment import OperacaoDrone
-from agent import AgenteHeuristico
+from agent_heuristico import AgenteHeuristico
 
 # iniciando o pygame
 pygame.init()

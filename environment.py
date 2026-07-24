@@ -2,7 +2,7 @@ import os
 import subprocess
 import random
 import time
-from agent import AgenteHeuristico
+from agent_heuristico import AgenteHeuristico
 
 
 class OperacaoDrone:
